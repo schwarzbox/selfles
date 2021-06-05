@@ -64,10 +64,10 @@ def get_notification_message(future_date, message):
     date_fmt = future_date.strftime('%d-%m-%Y')
     now = datetime.datetime.now()
     days = (future_date - now).days
-    index = 0
     if days <= 0:
         days = 0
-    elif index < len(settings.EMO):
+        index = 0
+    elif days < len(settings.EMO):
         index = days
     else:
         index = len(settings.EMO) - 1
