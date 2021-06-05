@@ -83,6 +83,12 @@ async def delete_event(event: types.Message, sleep_time: int = 0):
     logging.info(f'Delete event')
 
 
+async def restart_notify_task(user_id):
+    await cancel_notify_task(user_id)
+
+    TASKS[user_id] = asyncio.create_task(notify_task(user_id))
+
+
 async def cancel_notify_task(user_id):
     task = TASKS.get(user_id)
     if task and not task.cancelled():
@@ -91,7 +97,7 @@ async def cancel_notify_task(user_id):
             await task
         except asyncio.CancelledError:
             TASKS[user_id] = None
-            logging.info(f'Cancel notify task: {task}')
+            logging.info(f'Cancel notify task: {user_id}')
 
 
 async def notify_task(user_id):
@@ -99,7 +105,6 @@ async def notify_task(user_id):
         user = crud.read_user(user_id)
         message = user[2]
         period = user[3]
-        is_notify = user[4]
 
         ftime = datetime.datetime.strptime(period, settings.DATETIME_FORMAT)
         utc = datetime.datetime.utcnow().replace(microsecond=0)
@@ -120,20 +125,22 @@ async def notify_task(user_id):
         await IBOT.send_message(
             user_id, utils.get_notification_message(future_date, message),
             parse_mode=types.ParseMode.HTML,
-            reply_markup=kb.timer_kb)
+            reply_markup=kb.date_kb)
 
         ftime += datetime.timedelta(days=1)
 
         if ftime >= future_date:
-            crud.update_user_period(user_id, ftime, False)
-
             await IBOT.send_sticker(user_id, settings.DONE,
                                     disable_notification=True)
 
             await cancel_notify_task(user_id)
-            logging.info(f'Done Notify task: {user_id}')
 
-        crud.update_user_period(user_id, ftime, is_notify)
+            crud.update_user_period(user_id, period, False)
+
+            logging.info(f'Finish notify task: {user_id}')
+            return
+        else:
+            crud.update_user_period(user_id, ftime, True)
 
 
 @ DISP.callback_query_handler(lambda cb: True)
@@ -372,8 +379,8 @@ async def date_handler(event: types.Message):
         crud.update_user_date(user_id, future_date, message)
 
         if is_notify:
-            await cancel_notify_task(user_id)
-            TASKS[user_id] = asyncio.create_task(notify_task(user_id))
+            await restart_notify_task(user_id)
+            logging.info(f'Restart notify task: {user_id}')
 
     await event.answer(
         utils.get_notification_message(future_date, message),
@@ -426,7 +433,6 @@ async def timer_handler(event: types.Message):
     user_id, user = utils.get_user(event)
 
     period = user[3]
-    is_notify = user[4]
 
     now = event.date.replace(microsecond=0)
     hour, minute, gmt = (None, None, '')
@@ -465,7 +471,10 @@ async def timer_handler(event: types.Message):
 
             ftime -= timezone.utcoffset(now)
 
-            is_notify = False
+            crud.update_user_period(user_id, ftime, True)
+
+            await restart_notify_task(user_id)
+            logging.info(f'Create/update notify task: {user_id}')
         else:
             await event.answer(
                 '/timer HH:MM',
@@ -484,14 +493,6 @@ async def timer_handler(event: types.Message):
 
         strtime = ftime.strftime('%H:%M %d-%m-%Y')
 
-    if not is_notify:
-        await cancel_notify_task(user_id)
-        is_notify = True
-
-        TASKS[user_id] = asyncio.create_task(notify_task(user_id))
-        # to setup correct
-        crud.update_user_period(user_id, ftime, is_notify)
-
     await event.answer(
         f'{settings.ICONS["timer"]} {strtime} {gmt}',
         parse_mode=types.ParseMode.HTML,
@@ -509,8 +510,9 @@ async def stop_handler(event: types.Message):
     await cancel_notify_task(user_id)
 
     period = user[3]
-    is_notify = False
-    crud.update_user_period(user_id, period, is_notify)
+    crud.update_user_period(user_id, period, False)
+
+    logging.info(f'Stop notify task: {user_id}')
 
     await event.answer(
         f'{settings.ICONS["timer"]} {settings.ICONS["stop"]}',
@@ -703,7 +705,8 @@ async def on_load():
         is_notify = user[4]
 
         if is_notify:
-            TASKS[user_id] = asyncio.create_task(notify_task(user_id))
+            await restart_notify_task(user_id)
+            logging.info(f'Restart notify task: {user_id}')
 
 
 async def on_debug():

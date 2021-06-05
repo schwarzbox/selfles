@@ -1,6 +1,6 @@
 # iBot
 
-v0.95
+v0.96
 
 /start
 
