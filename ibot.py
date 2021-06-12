@@ -105,6 +105,13 @@ async def notify_task(user_id):
         user = crud.read_user(user_id)
         message = user[2]
         period = user[3]
+        is_notify = user[4]
+        if not is_notify:
+            await IBOT.send_sticker(user_id, settings.DONE,
+                                    disable_notification=True)
+
+            logging.info('Iterrupt notify task: {user_id}')
+            raise
 
         ftime = datetime.datetime.strptime(period, settings.DATETIME_FORMAT)
         utc = datetime.datetime.utcnow().replace(microsecond=0)
@@ -113,7 +120,7 @@ async def notify_task(user_id):
         try:
             await asyncio.sleep(sec)
         except asyncio.CancelledError:
-            logging.info(f'Cancel notify task: {user_id}')
+            logging.info('Iterrupt notify task: {user_id}')
             raise
 
         await asyncio.sleep(settings.SAVE_DELAY)
@@ -130,15 +137,7 @@ async def notify_task(user_id):
         ftime += datetime.timedelta(days=1)
 
         if ftime >= future_date:
-            await IBOT.send_sticker(user_id, settings.DONE,
-                                    disable_notification=True)
-
-            await cancel_notify_task(user_id)
-
-            crud.update_user_period(user_id, period, False)
-
-            logging.info(f'Finish notify task: {user_id}')
-            return
+            crud.update_user_period(user_id, ftime, False)
         else:
             crud.update_user_period(user_id, ftime, True)
 
