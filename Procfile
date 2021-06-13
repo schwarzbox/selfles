@@ -1,1 +1,1 @@
-web: python ibot.py
+web: python selfles.py

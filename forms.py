@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# IBOT
+# SELFLES
 
 from aiogram.dispatcher.filters.state import State, StatesGroup
 

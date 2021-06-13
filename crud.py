@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# IBOT
+# SELFLES
 
 import logging
 import sqlite3

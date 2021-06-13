@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 """
-IBOT
+SELFLES
 """
 from random import randint
 
@@ -55,6 +55,10 @@ __version__ = 1.0
 # FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 # DEALINGS IN THE SOFTWARE.
 
+# Heroku deploy
+# heroku git:remote -a ibot-appl
+# https://git.heroku.com/ibot-appl.git
+# git push heroku master
 
 # heroku ps:scale web=1 -a ibot-appl
 # heroku ps:scale clock=1
@@ -109,9 +113,15 @@ async def notify_task(user_id):
         if not is_notify:
             await IBOT.send_sticker(user_id, settings.DONE,
                                     disable_notification=True)
-
-            logging.info('Iterrupt notify task: {user_id}')
-            raise
+            task = TASKS.get(user_id)
+            if task and not task.cancelled():
+                task.cancel()
+            try:
+                await task
+            except asyncio.CancelledError:
+                TASKS[user_id] = None
+                logging.info(f'Iterrupt notify task: {user_id}')
+                raise
 
         ftime = datetime.datetime.strptime(period, settings.DATETIME_FORMAT)
         utc = datetime.datetime.utcnow().replace(microsecond=0)
