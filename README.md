@@ -1,6 +1,8 @@
 # selfles
 
-v0.96
+v0.97
+
+/avatar /ava SEED
 
 /start
 
@@ -17,8 +19,6 @@ v0.96
 /zen /z
 
 /hints /hi
-
-/avatar /ava SEED
 
 /help /h
 

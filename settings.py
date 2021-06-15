@@ -51,7 +51,7 @@ ICONS = {
     'map': '🗺',
     'locate': '📍',
     'gmt': '🌐',
-    'cancel': '❌',
+    'cancel': '❌\u200c',
     'set': '⚙️',
     'quote': '🔖',
     'author': '👤',
@@ -74,11 +74,15 @@ HELP = f"""{ICONS["help"]} Help
 /boltology /b QUOTE AUTHOR
 /haiku /ha SEED
 /zen /z
-/tool /to
-/help /h
 /hints /hi
+/help /h
+/tool /to
 /cancel /c
 """
+
+HINTS_ACTIONS = [
+    'set_date', 'set_timer', 'set_boltology', 'set_haiku', 'set_avatar'
+]
 
 MENU = {
     'date': [f'{ICONS["date"]} DD/MM/YYYY', f'{ICONS["note"]} NOTE'],

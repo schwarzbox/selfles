@@ -63,7 +63,8 @@ def get_time_zone(location):
 def get_notification_message(future_date, message):
     date_fmt = future_date.strftime('%d-%m-%Y')
     now = datetime.datetime.now()
-    days = (future_date - now).days
+    days = (future_date - now).days + 1
+
     if days <= 0:
         days = 0
         index = 0

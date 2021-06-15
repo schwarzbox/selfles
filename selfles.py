@@ -56,15 +56,15 @@ __version__ = 1.0
 # DEALINGS IN THE SOFTWARE.
 
 # Heroku deploy
-# heroku git:remote -a ibot-appl
-# https://git.heroku.com/ibot-appl.git
+# heroku git:remote -a selfles
+# https://git.heroku.com/selfles.git
 # git push heroku master
 
-# heroku ps:scale web=1 -a ibot-appl
+# heroku ps:scale web=1 -a selfles
 # heroku ps:scale clock=1
 # heroku ps:scale worker=0
 # logs
-# heroku logs --tail -a ibot-appl
+# heroku logs --tail -a selfles
 
 # ping GMT
 # http: // kaffeine.herokuapp.com
@@ -109,19 +109,6 @@ async def notify_task(user_id):
         user = crud.read_user(user_id)
         message = user[2]
         period = user[3]
-        is_notify = user[4]
-        if not is_notify:
-            await IBOT.send_sticker(user_id, settings.DONE,
-                                    disable_notification=True)
-            task = TASKS.get(user_id)
-            if task and not task.cancelled():
-                task.cancel()
-            try:
-                await task
-            except asyncio.CancelledError:
-                TASKS[user_id] = None
-                logging.info(f'Iterrupt notify task: {user_id}')
-                raise
 
         ftime = datetime.datetime.strptime(period, settings.DATETIME_FORMAT)
         utc = datetime.datetime.utcnow().replace(microsecond=0)
@@ -144,12 +131,24 @@ async def notify_task(user_id):
             parse_mode=types.ParseMode.HTML,
             reply_markup=kb.date_kb)
 
-        ftime += datetime.timedelta(days=1)
-
         if ftime >= future_date:
             crud.update_user_period(user_id, ftime, False)
+            await IBOT.send_sticker(user_id, settings.DONE,
+                                    disable_notification=True)
+            task = TASKS.get(user_id)
+            if task and not task.cancelled():
+                task.cancel()
+            try:
+                await task
+            except asyncio.CancelledError:
+                TASKS[user_id] = None
+                logging.info(f'Iterrupt notify task: {user_id}')
+                raise
+            return
         else:
-            crud.update_user_period(user_id, ftime, True)
+            crud.update_user_period(
+                user_id, ftime + datetime.timedelta(days=1), True
+            )
 
 
 @ DISP.callback_query_handler(lambda cb: True)
@@ -161,9 +160,7 @@ async def callback_handler(callback_query: types.CallbackQuery):
     user_id, user = utils.get_user(message)
     hints = user[5]
 
-    if (action in ['set_date', 'set_timer', 'set_boltology',
-                   'set_haiku', 'set_avatar']
-            and hints):
+    if action in settings.HINTS_ACTIONS and hints:
         key = action.split('_')[1]
 
         menu = settings.MENU.get(key)
@@ -197,21 +194,21 @@ async def callback_handler(callback_query: types.CallbackQuery):
 
         await forms.AvatarForm.seed.set()
         await IBOT.send_message(callback_query.from_user.id,
-                                f'{settings.ICONS["bot"]}',
+                                settings.ICONS['bot'],
                                 reply_markup=keyboard)
     elif action == 'date':
         await date_handler(message)
     elif action == 'set_date':
         await forms.DateForm.date.set()
         await IBOT.send_message(callback_query.from_user.id,
-                                f'{settings.ICONS["date"]}',
+                                settings.ICONS['date'],
                                 reply_markup=kb.cancel_kb)
     elif action == 'timer':
         await timer_handler(message)
     elif action == 'set_timer':
         await forms.TimerForm.period.set()
         await IBOT.send_message(callback_query.from_user.id,
-                                f'{settings.ICONS["timer"]}',
+                                settings.ICONS['timer'],
                                 reply_markup=kb.num_kb)
     elif action == 'stop':
         await stop_handler(message)
@@ -220,7 +217,7 @@ async def callback_handler(callback_query: types.CallbackQuery):
     elif action == 'set_boltology':
         await forms.BoltoForm.quote.set()
         await IBOT.send_message(callback_query.from_user.id,
-                                f'{settings.ICONS["quote"]}',
+                                settings.ICONS['quote'],
                                 reply_markup=kb.cancel_kb)
     elif action == 'more_bolto':
         await IBOT.edit_message_text(utils.get_random_boltology_message(),
@@ -230,7 +227,7 @@ async def callback_handler(callback_query: types.CallbackQuery):
     elif action == 'set_haiku':
         await forms.HaikuForm.seed.set()
         await IBOT.send_message(callback_query.from_user.id,
-                                f'{settings.ICONS["flower"]}',
+                                settings.ICONS['flower'],
                                 reply_markup=kb.haiku_kb)
     elif action == 'more_haiku':
         seed = message.text.split(' ')[1]
@@ -264,7 +261,9 @@ async def callback_handler(callback_query: types.CallbackQuery):
 
 
 @ DISP.message_handler(commands=['cancel', 'c'], state='*')
-@ DISP.message_handler(Text(equals='cancel', ignore_case=True), state='*')
+@ DISP.message_handler(
+    Text(equals=settings.ICONS['cancel'], ignore_case=True), state='*'
+)
 async def cancel_handler(event: types.Message, state: FSMContext):
     current_state = await state.get_state()
     if current_state is None:
@@ -274,7 +273,7 @@ async def cancel_handler(event: types.Message, state: FSMContext):
 
     await state.finish()
 
-    await event.answer(f'{settings.ICONS["cancel"]}\u200c',
+    await event.answer(settings.ICONS['cancel'],
                        disable_notification=True,
                        reply_markup=kb.tool_kb)
 
@@ -416,7 +415,7 @@ async def period_process(event: types.Message, state: FSMContext):
 
         await forms.TimerForm.next()
         await event.answer(
-            f'{settings.ICONS["map"]}',
+            settings.ICONS['map'],
             disable_notification=True,
             reply_markup=kb.loc_kb
         )
