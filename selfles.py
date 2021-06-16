@@ -132,18 +132,11 @@ async def notify_task(user_id):
             reply_markup=kb.date_kb)
 
         if ftime >= future_date:
+            await cancel_notify_task(user_id)
+
             crud.update_user_period(user_id, ftime, False)
             await IBOT.send_sticker(user_id, settings.DONE,
                                     disable_notification=True)
-            task = TASKS.get(user_id)
-            if task and not task.cancelled():
-                task.cancel()
-            try:
-                await task
-            except asyncio.CancelledError:
-                TASKS[user_id] = None
-                logging.info(f'Iterrupt notify task: {user_id}')
-                raise
             return
         else:
             crud.update_user_period(
