@@ -612,7 +612,7 @@ async def help_handler(event: types.Message):
 
     help_cmd = settings.HELP
     if utils.is_admin(event):
-        help_cmd = f'{settings.HELP}\n/database /db'
+        help_cmd = f'{settings.HELP}\n/database /db\n\n/upd\n/del ID'
     await event.answer(
         help_cmd,
         parse_mode=types.ParseMode.HTML,
@@ -663,6 +663,39 @@ async def database_handler(event: types.Message):
         me = await IBOT.get_me()
         await event.answer(
             f'Users: {crud.read_all_users()}\n\nMe: {me}',
+            parse_mode=types.ParseMode.HTML,
+            disable_notification=True,
+            reply_markup=kb.help_kb
+        )
+
+
+@ DISP.message_handler(commands=['upd'])
+async def update_user_handler(event: types.Message):
+    utils.logging_user(event)
+
+    args = event.get_args()
+
+    if utils.is_admin(event) and args:
+        args = args.split('|')
+        crud.update_user(*args)
+        await event.answer(
+            f'Users: {crud.read_all_users()}\n',
+            parse_mode=types.ParseMode.HTML,
+            disable_notification=True,
+            reply_markup=kb.help_kb
+        )
+
+
+@ DISP.message_handler(commands=['del'])
+async def delete_user_handler(event: types.Message):
+    utils.logging_user(event)
+
+    args = event.get_args()
+
+    if utils.is_admin(event) and args:
+        crud.delete_user(int(args))
+        await event.answer(
+            f'Users: {crud.read_all_users()}\n',
             parse_mode=types.ParseMode.HTML,
             disable_notification=True,
             reply_markup=kb.help_kb

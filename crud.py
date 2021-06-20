@@ -107,6 +107,12 @@ def update_user_hints(ID, hints):
     logging.info('Done')
 
 
+def update_user(ID, date, message, period, is_notify=0, hints=1):
+    update_user_date(ID, date, message)
+    update_user_period(ID, period, is_notify)
+    update_user_hints(ID, hints)
+
+
 def delete_user(ID):
     logging.info(f'Delete user: {ID}')
     conn = sqlite3.connect(DB)
