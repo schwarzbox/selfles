@@ -33,8 +33,9 @@ def get_user(event):
     user_id = event.from_user.id
     crud.create_user(
         user_id,
-        datetime.datetime.now().replace(hour=0, minute=0,
-                                        second=0, microsecond=0),
+        datetime.datetime.now().replace(
+            hour=0, minute=0, second=0, microsecond=0
+        ),
         settings.MESSAGE,
         datetime.datetime.now().replace(second=0, microsecond=0),
     )

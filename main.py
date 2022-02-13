@@ -60,6 +60,8 @@ __version__ = 1.0
 # https://git.heroku.com/selfles.git
 # git push heroku master
 
+# heroku git:clone -a selfles
+
 # heroku ps:scale web=1 -a selfles
 # heroku ps:scale clock=1
 # heroku ps:scale worker=0
@@ -110,9 +112,8 @@ async def notify_task(user_id):
         message = user[2]
         period = user[3]
 
-        ftime = datetime.datetime.strptime(period, settings.DATETIME_FORMAT)
         utc = datetime.datetime.utcnow().replace(microsecond=0)
-        sec = (ftime - utc).seconds
+        sec = (period - utc).seconds
 
         try:
             await asyncio.sleep(sec)
@@ -122,25 +123,23 @@ async def notify_task(user_id):
 
         await asyncio.sleep(settings.SAVE_DELAY)
 
-        future_date = datetime.datetime.strptime(
-            user[1], settings.DATETIME_FORMAT
-        )
+        future_date = user[1]
 
         await IBOT.send_message(
             user_id, utils.get_notification_message(future_date, message),
             parse_mode=types.ParseMode.HTML,
             reply_markup=kb.date_kb)
 
-        if ftime >= future_date:
+        if period >= future_date:
             await cancel_notify_task(user_id)
 
-            crud.update_user_period(user_id, ftime, False)
+            crud.update_user_period(user_id, period, False)
             await IBOT.send_sticker(user_id, settings.DONE,
                                     disable_notification=True)
             return
         else:
             crud.update_user_period(
-                user_id, ftime + datetime.timedelta(days=1), True
+                user_id, period + datetime.timedelta(days=1), True
             )
 
 
@@ -344,7 +343,7 @@ async def date_handler(event: types.Message):
 
     user_id, user = utils.get_user(event)
 
-    future_date = datetime.datetime.strptime(user[1], settings.DATETIME_FORMAT)
+    future_date = user[1]
 
     message = user[2]
     is_notify = user[4]
@@ -484,7 +483,7 @@ async def timer_handler(event: types.Message):
             )
             return
     else:
-        ftime = datetime.datetime.strptime(period, settings.DATETIME_FORMAT)
+        ftime = period
         location = LOCATION.get(event.from_user.id, event.location)
         if location:
             timezone = utils.get_time_zone(location)

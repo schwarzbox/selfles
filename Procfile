@@ -1,1 +1,1 @@
-web: python selfles.py
+web: python main.py

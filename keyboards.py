@@ -50,9 +50,6 @@ haiku_kb = ReplyKeyboardMarkup(resize_keyboard=True, one_time_keyboard=True)
 haiku_kb.add(spring, silence, temple)
 haiku_kb.add(cancel)
 
-version = KeyboardButton("import sys\nprint(sys.version)")
-hello = KeyboardButton("print('Hello world!')")
-
 bstart = InlineKeyboardButton('Start', callback_data='start')
 
 bavatar = InlineKeyboardButton(settings.ICONS['bot'],

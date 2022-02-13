@@ -11,12 +11,15 @@ if NO_DEBUG is False:
     # TOKEN .env
     from dotenv import load_dotenv
     load_dotenv()
+
 # Press "Reveal Config Vars" in settings tab on Heroku and set TOKEN variable
 TOKEN = os.getenv('TOKEN', '')
 ADMIN_ID = int(os.getenv('ADMIN_ID', 0))
 ADMIN = os.getenv('ADMIN', '')
-PROJECT_NAME = os.getenv('PROJECT_NAME', 'ibot-appl')
+PROJECT_NAME = os.getenv('PROJECT_NAME', 'selfles')
 PORT = os.getenv('PORT', 8000)
+
+DB_URL = os.getenv('DATABASE_URL', '')
 
 WEBHOOK_HOST = f'https://{PROJECT_NAME}.herokuapp.com/'
 WEBHOOK_URL_PATH = '/webhook/' + TOKEN

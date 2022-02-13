@@ -1,5 +1,6 @@
-aiogram==2.13
+aiogram==2.19
+psycopg2==2.9.3
 tzwhere==3.0.3
-numpy==1.20.3
+numpy==1.22.2
 https://download.pytorch.org/whl/cpu/torch-1.8.1%2Bcpu-cp38-cp38-linux_x86_64.whl
-requests==2.25.1
+requests==2.26.0
